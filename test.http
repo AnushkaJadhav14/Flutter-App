@@ -1,0 +1,16 @@
+### Request OTP
+POST http://localhost:5000/request-otp
+Content-Type: application/json
+
+{
+  "corporateId": "User1"
+}
+
+### Verify OTP
+POST http://localhost:5000/verify-otp
+Content-Type: application/json
+
+{
+  "corporateId": "User1",
+  "otp": "1234"
+}
