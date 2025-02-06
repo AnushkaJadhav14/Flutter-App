@@ -27,7 +27,7 @@ class MongoAuthService {
   }
 
   // Function to verify OTP
-  Future<String> verifyOtp(String corporateId, String otp) async {
+  Future<Map<String, dynamic>> verifyOtp(String corporateId, String otp) async {
     try {
       final response = await http.post(
         Uri.parse("$backendUrl/verify-otp"),
@@ -36,14 +36,14 @@ class MongoAuthService {
       );
 
       if (response.statusCode == 200) {
-        return "Login Successful";
+        return jsonDecode(response.body); // Returning parsed JSON response
       } else {
         // Handle backend error messages
         Map<String, dynamic>? data = _parseJson(response.body);
-        return "Error: ${data?['message'] ?? 'OTP verification failed'}";
+        return {"error": data?['message'] ?? "OTP verification failed"};
       }
     } catch (e) {
-      return "Error: Unable to connect to server";
+      return {"error": "Unable to connect to server"};
     }
   }
 
