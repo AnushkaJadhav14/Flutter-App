@@ -1,9 +1,9 @@
 import 'dart:async';
 import '../service/mongo_auth_service.dart';
 import 'package:flutter/material.dart';
-// Make sure to import AdminDashboard
-// Make sure to import UserListPage
-// Make sure to import UserListPage
+import 'l1_admin_dashboard.dart';
+import 'l2_admin_dashboard.dart';
+import 'user_list_page.dart';
 
 class OtpScreen extends StatefulWidget {
   final String corporateId;
@@ -47,16 +47,21 @@ class _OtpScreenState extends State<OtpScreen>
 
   void startTimer() {
     setState(() {
-      _secondsRemaining = 40;
-      _isResendAvailable = false;
+      _secondsRemaining = 300; // Full countdown for OTP expiry
+      _isResendAvailable = false; // Disable Resend OTP initially
     });
+
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         if (_secondsRemaining > 0) {
           _secondsRemaining--;
+
+          // Enable Resend OTP only after 5 minutes (300 seconds)
+          if (_secondsRemaining == 0) {
+            _isResendAvailable = true;
+          }
         } else {
-          _isResendAvailable = true;
           timer.cancel();
         }
       });
@@ -83,10 +88,16 @@ class _OtpScreenState extends State<OtpScreen>
 
         // Check the role from the response to decide redirection
         String role = response['role'] ?? '';
-        if (role == 'admin') {
+
+        if (role == "adminL1") {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const AdminDashboard()),
+            MaterialPageRoute(builder: (context) => const L1AdminDashboard()),
+          );
+        } else if (role == "adminL2") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const L2AdminDashboard()),
           );
         } else {
           Navigator.pushReplacement(
