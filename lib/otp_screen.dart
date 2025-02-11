@@ -1,9 +1,9 @@
 import 'dart:async';
 import '../service/mongo_auth_service.dart';
 import 'package:flutter/material.dart';
-import 'l1_admin_dashboard.dart';
 import 'l2_admin_dashboard.dart';
-import 'user_list_page.dart';
+import 'idea_list_screen.dart';
+import 'form_page.dart';
 
 class OtpScreen extends StatefulWidget {
   final String corporateId;
@@ -47,8 +47,8 @@ class _OtpScreenState extends State<OtpScreen>
 
   void startTimer() {
     setState(() {
-      _secondsRemaining = 40; // Countdown for 40 seconds
-      _isResendAvailable = false; // Initially, Resend OTP is disabled
+      _secondsRemaining = 40; // Full countdown for OTP expiry
+      _isResendAvailable = false; // Disable Resend OTP initially
     });
 
     _timer?.cancel();
@@ -56,9 +56,13 @@ class _OtpScreenState extends State<OtpScreen>
       setState(() {
         if (_secondsRemaining > 0) {
           _secondsRemaining--;
+
+          // Enable Resend OTP only after 5 minutes (300 seconds)
+          if (_secondsRemaining == 0) {
+            _isResendAvailable = true;
+          }
         } else {
           timer.cancel();
-          _isResendAvailable = true; // Enable Resend OTP after 40 seconds
         }
       });
     });
@@ -88,7 +92,7 @@ class _OtpScreenState extends State<OtpScreen>
         if (role == "adminL1") {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const L1AdminDashboard()),
+            MaterialPageRoute(builder: (context) => const IdeaListScreen()),
           );
         } else if (role == "adminL2") {
           Navigator.pushReplacement(
@@ -98,7 +102,7 @@ class _OtpScreenState extends State<OtpScreen>
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const UserListPage()),
+            MaterialPageRoute(builder: (context) => const FormPage()),
           );
         }
       }
