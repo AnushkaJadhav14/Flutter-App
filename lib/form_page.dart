@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -27,7 +28,8 @@ class _FormPageState extends State<FormPage> {
   String? _selectedIdeaTheme;
   String? _selectedDepartment;
   String? _selectedBenefitsCategory;
-  File? _selectedFile;
+  bool _fileUploaded = false;
+  PlatformFile? _selectedFile; // Supports Web and Mobile file selection
 
   final List<String> locations = ["A", "B", "C", "D"];
   final List<String> ideaThemes = [
@@ -57,12 +59,24 @@ class _FormPageState extends State<FormPage> {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['jpg', 'png', 'pdf'],
+      withData: kIsWeb, // Required for web uploads
     );
 
-    if (result != null && result.files.single.path != null) {
+    if (result != null) {
       setState(() {
-        _selectedFile = File(result.files.single.path!);
+        _selectedFile = result.files.single;
+        _fileUploaded = true; // Set to true when a file is picked
       });
+    } else {
+      setState(() {
+        _fileUploaded = false; // Reset state if no file is selected
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("⚠️ Please select a valid JPG, PNG, or PDF file."),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
   }
 
@@ -103,8 +117,25 @@ class _FormPageState extends State<FormPage> {
           _expectedBenefitsValueController.text;
 
       if (_selectedFile != null) {
-        request.files.add(await http.MultipartFile.fromPath(
-            "attachment", _selectedFile!.path));
+        String corporateId = _employeeIdController.text;
+        String originalFileName = _selectedFile!.name;
+        String newFileName = "$corporateId/$originalFileName";
+
+        if (kIsWeb) {
+          // Web Upload using fromBytes
+          request.files.add(http.MultipartFile.fromBytes(
+            "attachment",
+            _selectedFile!.bytes!,
+            filename: newFileName,
+          ));
+        } else {
+          // Mobile/Desktop Upload using fromPath
+          request.files.add(await http.MultipartFile.fromPath(
+            "attachment",
+            _selectedFile!.path!,
+            filename: newFileName,
+          ));
+        }
       }
 
       var response = await request.send();
@@ -112,7 +143,7 @@ class _FormPageState extends State<FormPage> {
       var decodedResponse = jsonDecode(responseBody);
 
       if (response.statusCode == 201) {
-        // Reset form only if submission is successful
+        // Clear all form fields
         _employeeNameController.clear();
         _employeeIdController.clear();
         _employeeFunctionController.clear();
@@ -126,6 +157,7 @@ class _FormPageState extends State<FormPage> {
           _selectedDepartment = null;
           _selectedBenefitsCategory = null;
           _selectedFile = null;
+          _fileUploaded = false; // Reset "File Uploaded" text
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -205,29 +237,27 @@ class _FormPageState extends State<FormPage> {
                     "Attach File :",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(width: 10), // Space between text and button
+                  const SizedBox(width: 10),
                   ElevatedButton.icon(
                     onPressed: _pickFile,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: blueColor,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                          borderRadius: BorderRadius.circular(20)),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 12),
                     ),
                     icon: const Icon(Icons.upload_file, color: Colors.white),
-                    label: const Text(
-                      "Upload File",
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+                    label: const Text("Upload File",
+                        style: TextStyle(color: Colors.white, fontSize: 16)),
                   ),
+                  const SizedBox(width: 10),
+                  if (_fileUploaded)
+                    const Text("📂 File Uploaded",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.green)),
                 ],
               ),
-              const SizedBox(height: 10),
-              if (_selectedFile != null)
-                Text(_selectedFile!.path.split('/').last,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _submitForm,
