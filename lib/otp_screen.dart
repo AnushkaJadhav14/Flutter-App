@@ -43,6 +43,10 @@ class _OtpScreenState extends State<OtpScreen>
       begin: redColor.withOpacity(0.4),
       end: redColor.withOpacity(1.0),
     ).animate(_animationController);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(FocusNode());
+    });
   }
 
   void startTimer() {
@@ -53,6 +57,7 @@ class _OtpScreenState extends State<OtpScreen>
 
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
       setState(() {
         if (_secondsRemaining > 0) {
           _secondsRemaining--;
@@ -82,53 +87,80 @@ class _OtpScreenState extends State<OtpScreen>
           await _authService.verifyOtp(widget.corporateId, otp);
 
       if (response.containsKey("error")) {
-        _showMessage(response["error"]);
+        if (mounted) {
+          _showMessage(response["error"]);
+        }
       } else {
-        _showMessage("Login Successful");
+        if (mounted) {
+          _showMessage("Login Successful");
 
-        // Check the role from the response to decide redirection
-        String role = response['role'] ?? '';
+          // Check the role from the response to decide redirection
+          String role = response['role'] ?? '';
 
-        if (role == "adminL1") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const IdeaListScreen()),
-          );
-        } else if (role == "adminL2") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const L2AdminDashboard()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const FormPage()),
-          );
+          if (role == "adminL1") {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const IdeaListScreen()),
+              );
+            }
+          } else if (role == "adminL2") {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => L2AdminDashboard()),
+              );
+            }
+          } else {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => FormPage(
+                          corporateId:
+                              widget.corporateId, // pass the corporateId
+                        )),
+              );
+            }
+          }
         }
       }
     } else {
-      _showMessage('Please enter a 4-digit OTP');
+      if (mounted) {
+        _showMessage('Please enter a 4-digit OTP');
+      }
     }
   }
 
   void resendOtp() async {
     try {
       String response = await _authService.requestOtp(widget.corporateId);
-      _showMessage(response);
-
+      if (mounted) {
+        _showMessage(response);
+      }
       startTimer(); // Restart the timer after resending OTP
     } catch (error) {
-      _showMessage('Failed to resend OTP. Please try again.');
+      if (mounted) {
+        _showMessage('Failed to resend OTP. Please try again.');
+      }
     }
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+
+    // Adjust width based on screen size
+    double inputFieldWidth = screenWidth < 350 ? screenWidth * 0.15 : 50;
+    double fieldGap = screenWidth < 350 ? screenWidth * 0.03 : 10;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -139,101 +171,120 @@ class _OtpScreenState extends State<OtpScreen>
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Enter OTP sent to your email',
-                      style:
-                          const TextStyle(color: Colors.white, fontSize: 18)),
-                  const SizedBox(height: 100),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(
-                      4,
-                      (index) => AnimatedBuilder(
-                        animation: _glowAnimation,
-                        builder: (context, child) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _glowAnimation.value!,
-                                  blurRadius: 15,
-                                  spreadRadius: 5,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Enter OTP sent to your email',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 100),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          4,
+                          (index) => AnimatedBuilder(
+                            animation: _glowAnimation,
+                            builder: (context, child) {
+                              return Container(
+                                margin: EdgeInsets.only(right: fieldGap),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _glowAnimation.value!,
+                                      blurRadius: 15,
+                                      spreadRadius: 5,
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: SizedBox(
-                              width: 50,
-                              child: TextFormField(
-                                controller: otpControllers[index],
-                                keyboardType: TextInputType.number,
-                                textAlign: TextAlign.center,
-                                maxLength: 1,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  counterText: '',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                child: SizedBox(
+                                  width: inputFieldWidth,
+                                  height: 55,
+                                  child: TextFormField(
+                                    controller: otpControllers[index],
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
+                                    maxLength: 1,
+                                    decoration: InputDecoration(
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      counterText: '',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    onChanged: (value) {
+                                      if (value.isNotEmpty && index < 3) {
+                                        FocusScope.of(context).nextFocus();
+                                      } else if (value.isEmpty && index > 0) {
+                                        FocusScope.of(context).previousFocus();
+                                      }
+                                    },
                                   ),
                                 ),
-                                onChanged: (value) {
-                                  if (value.isNotEmpty && index < 3) {
-                                    FocusScope.of(context).nextFocus();
-                                  }
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 50),
-                  Text(
-                    _isResendAvailable
-                        ? 'You can resend the OTP now'
-                        : 'Resend OTP in $_secondsRemaining sec',
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: redColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                              );
+                            },
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 14, horizontal: 20),
-                        shadowColor: Colors.black26,
-                        elevation: 5,
                       ),
-                      onPressed: submitOtp,
-                      child: const Text('Submit OTP',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  TextButton(
-                    onPressed: _isResendAvailable ? resendOtp : null,
-                    child: Text('Resend OTP',
+                      const SizedBox(height: 30),
+                      Text(
+                        _isResendAvailable
+                            ? 'You can resend the OTP now'
+                            : 'Resend OTP in $_secondsRemaining sec',
                         style: TextStyle(
-                            color: _isResendAvailable
-                                ? Colors.white
-                                : Colors.red)),
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                      SizedBox(
+                        width: 200,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: redColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 18, horizontal: 20),
+                            shadowColor: Colors.black26,
+                            elevation: 5,
+                          ),
+                          onPressed: submitOtp,
+                          child: Text(
+                            'Submit OTP',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                      TextButton(
+                        onPressed: _isResendAvailable ? resendOtp : null,
+                        child: Text(
+                          'Resend OTP',
+                          style: TextStyle(
+                            color:
+                                _isResendAvailable ? Colors.white : Colors.red,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),

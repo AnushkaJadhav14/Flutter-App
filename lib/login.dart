@@ -58,107 +58,156 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Aadhar Housing Finance Limited'),
-        titleTextStyle: const TextStyle(fontSize: 23, color: Colors.white),
-        backgroundColor: redColor,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomRight,
-            colors: [redColor, blueColor, whiteColor],
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0), 
+          child: Image.asset(
+            'assets/images/logo2.png', 
+            width: MediaQuery.of(context).size.width > 600
+                ? 50
+                : 30, 
+            fit: BoxFit.contain, 
           ),
         ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20.0),
-                    child: CarouselSlider(
-                      options: CarouselOptions(
-                        height: 300.0,
-                        autoPlay: true,
-                        enlargeCenterPage: true,
-                        enableInfiniteScroll: true,
-                      ),
-                      items: imageList.map((item) {
-                        return Builder(
-                          builder: (BuildContext context) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 5,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.asset(
-                                  item,
-                                  fit: BoxFit.contain,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 50),
-                  TextField(
-                    controller: _corporateIdController,
-                    decoration: InputDecoration(
-                      labelText: 'Corporate ID',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _isLoading
-                      ? const CircularProgressIndicator()
-                      : SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: redColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 14, horizontal: 20),
-                              shadowColor: Colors.black26,
-                              elevation: 5,
-                            ),
-                            onPressed: _getOtp,
-                            child: const Text(
-                              'Get OTP',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                ],
-              ),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Aadhar Housing Finance Limited',
+            style: TextStyle(
+              fontSize: MediaQuery.of(context).size.width > 600
+                  ? 23
+                  : 18, 
+              color: Colors.white,
             ),
           ),
         ),
+        backgroundColor: redColor,
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Detect screen size
+          double screenWidth = constraints.maxWidth;
+          double screenHeight = constraints.maxHeight;
+          bool isLargeScreen = screenWidth > 600; 
+          return SingleChildScrollView(
+            child: Container(
+              height:
+                  screenHeight, 
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomRight,
+                  colors: [redColor, blueColor, whiteColor],
+                ),
+              ),
+              child: SafeArea(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20.0),
+                          child: CarouselSlider(
+                            options: CarouselOptions(
+                              height: isLargeScreen
+                                  ? screenHeight * 0.5
+                                  : screenHeight *
+                                      0.3, 
+                              autoPlay: true,
+                              enlargeCenterPage: true,
+                              enableInfiniteScroll: true,
+                            ),
+                            items: imageList.map((item) {
+                              return Builder(
+                                builder: (BuildContext context) {
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal:
+                                            8.0), 
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black26,
+                                          blurRadius: 5,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.asset(
+                                        item,
+                                        fit: BoxFit
+                                            .contain, 
+                                        width: isLargeScreen
+                                            ? screenWidth * 0.7
+                                            : screenWidth *
+                                                0.9, 
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 50),
+                        SizedBox(
+                          width: isLargeScreen
+                              ? screenWidth * 0.5
+                              : screenWidth *
+                                  0.85, 
+                          child: TextField(
+                            controller: _corporateIdController,
+                            decoration: InputDecoration(
+                              labelText: 'Corporate ID',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _isLoading
+                            ? const CircularProgressIndicator()
+                            : SizedBox(
+                                width: isLargeScreen ? null : screenWidth * 0.4,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: redColor,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    shadowColor: Colors.black26,
+                                    elevation: 5,
+                                  ),
+                                  onPressed: _getOtp,
+                                  child: const Text(
+                                    'Get OTP',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              )
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
